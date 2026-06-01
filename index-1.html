@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kazabella — Inventaire Linge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sand: #f5f0e8;
+      --sand-dark: #ede6d6;
+      --linen: #f9f6f0;
+      --ink: #1a1612;
+      --ink-soft: #3d3530;
+      --warm: #8b6f52;
+      --warm-light: #c4a882;
+      --accent: #c8502a;
+      --accent-soft: #e8c4b4;
+      --green: #4a7c59;
+      --green-soft: #c4dbc9;
+      --yellow: #c4962a;
+      --yellow-soft: #f0dfa0;
+      --border: rgba(139,111,82,0.2);
+      --shadow: 0 2px 24px rgba(26,22,18,0.08);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Mono', monospace;
+      background: var(--sand);
+      color: var(--ink);
+      min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse at 10% 0%, rgba(200,80,42,0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 90% 100%, rgba(74,124,89,0.06) 0%, transparent 50%);
+    }
+
+    /* HEADER */
+    header {
+      background: var(--ink);
+      color: var(--sand);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    .logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.6rem;
+      font-weight: 300;
+      letter-spacing: 0.12em;
+      color: var(--sand);
+    }
+
+    .logo span {
+      color: var(--warm-light);
+      font-style: italic;
+    }
+
+    .header-meta {
+      font-size: 0.65rem;
+      color: rgba(245,240,232,0.4);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* MAIN LAYOUT */
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2.5rem 2rem;
+    }
+
+    /* STATS BAR */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .stat-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 1.25rem 1.5rem;
+      position: relative;
+      overflow: hidden;
+      animation: fadeUp 0.4s ease both;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+
+    .stat-card.total::before { background: var(--warm); }
+    .stat-card.ok::before { background: var(--green); }
+    .stat-card.low::before { background: var(--yellow); }
+    .stat-card.critical::before { background: var(--accent); }
+
+    .stat-label {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--warm);
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.4rem;
+      font-weight: 300;
+      line-height: 1;
+      color: var(--ink);
+    }
+
+    .stat-sub {
+      font-size: 0.6rem;
+      color: var(--warm-light);
+      margin-top: 0.3rem;
+    }
+
+    /* TOOLBAR */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.4rem;
+      font-weight: 400;
+      font-style: italic;
+      color: var(--ink-soft);
+      flex: 1;
+    }
+
+    .filter-group {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .filter-btn {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.4rem 0.9rem;
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--warm);
+      cursor: pointer;
+      border-radius: 1px;
+      transition: all 0.15s;
+    }
+
+    .filter-btn:hover, .filter-btn.active {
+      background: var(--ink);
+      color: var(--sand);
+      border-color: var(--ink);
+    }
+
+    .btn-add {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.5rem 1.2rem;
+      background: var(--accent);
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 1px;
+      transition: all 0.15s;
+    }
+
+    .btn-add:hover { background: #a83e20; transform: translateY(-1px); }
+
+    /* SEARCH */
+    .search-wrap {
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+
+    .search-input {
+      width: 100%;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      padding: 0.75rem 1rem 0.75rem 2.5rem;
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--ink);
+      border-radius: 2px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .search-input:focus { border-color: var(--warm); }
+
+    .search-icon {
+      position: absolute;
+      left: 0.9rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--warm-light);
+      font-size: 0.8rem;
+      pointer-events: none;
+    }
+
+    /* TABLE */
+    .table-wrap {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.72rem;
+    }
+
+    thead {
+      background: var(--ink);
+      color: var(--sand);
+    }
+
+    th {
+      padding: 0.85rem 1rem;
+      text-align: left;
+      font-weight: 400;
+      font-size: 0.58rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    th:hover { color: var(--warm-light); }
+
+    th.sorted { color: var(--warm-light); }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.1s;
+      animation: fadeIn 0.3s ease both;
+    }
+
+    tbody tr:hover { background: var(--linen); }
+    tbody tr:last-child { border-bottom: none; }
+
+    td {
+      padding: 0.85rem 1rem;
+      vertical-align: middle;
+    }
+
+    .td-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1rem;
+      font-weight: 400;
+      color: var(--ink);
+    }
+
+    .td-logement {
+      color: var(--warm);
+      font-size: 0.65rem;
+      letter-spacing: 0.05em;
+    }
+
+    .td-qty {
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 1px;
+      font-size: 0.58rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    .badge-ok { background: var(--green-soft); color: var(--green); }
+    .badge-low { background: var(--yellow-soft); color: #7a5e18; }
+    .badge-critical { background: var(--accent-soft); color: var(--accent); }
+    .badge-cat { background: var(--sand-dark); color: var(--warm); }
+
+    .action-btns {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+    }
+
+    .btn-icon {
+      width: 28px; height: 28px;
+      border: 1px solid var(--border);
+      background: transparent;
+      border-radius: 1px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      transition: all 0.15s;
+      color: var(--ink-soft);
+    }
+
+    .btn-icon:hover { background: var(--sand-dark); border-color: var(--warm); }
+    .btn-icon.del:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
+    /* EMPTY STATE */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--warm-light);
+    }
+
+    .empty-state p {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.2rem;
+      font-style: italic;
+      margin-top: 0.5rem;
+    }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(26,22,18,0.7);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      backdrop-filter: blur(3px);
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal {
+      background: var(--linen);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      width: 100%;
+      max-width: 480px;
+      padding: 2rem;
+      transform: translateY(16px);
+      transition: transform 0.2s;
+      box-shadow: 0 20px 60px rgba(26,22,18,0.3);
+    }
+
+    .modal-overlay.open .modal { transform: translateY(0); }
+
+    .modal-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem;
+      font-weight: 300;
+      margin-bottom: 1.5rem;
+      color: var(--ink);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.75rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.58rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--warm);
+      margin-bottom: 0.35rem;
+    }
+
+    .form-input, .form-select {
+      width: 100%;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      padding: 0.6rem 0.8rem;
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--ink);
+      border-radius: 1px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .form-input:focus, .form-select:focus { border-color: var(--warm); }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+    .modal-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: flex-end;
+      margin-top: 1.5rem;
+    }
+
+    .btn-cancel {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.55rem 1.2rem;
+      background: transparent;
+      color: var(--warm);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      border-radius: 1px;
+      transition: all 0.15s;
+    }
+
+    .btn-cancel:hover { border-color: var(--warm); background: var(--sand-dark); }
+
+    .btn-save {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.55rem 1.4rem;
+      background: var(--ink);
+      color: var(--sand);
+      border: none;
+      cursor: pointer;
+      border-radius: 1px;
+      transition: all 0.15s;
+    }
+
+    .btn-save:hover { background: var(--warm); }
+
+    /* ALERT BANNER */
+    .alert-banner {
+      background: var(--accent-soft);
+      border: 1px solid var(--accent);
+      border-radius: 2px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.7rem;
+      color: var(--accent);
+      animation: fadeUp 0.3s ease;
+    }
+
+    .alert-banner.hidden { display: none; }
+
+    /* PROGRESS BAR */
+    .progress-bar {
+      width: 60px;
+      height: 4px;
+      background: var(--sand-dark);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.3s;
+    }
+
+    /* ANIMATIONS */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .toolbar { flex-direction: column; align-items: flex-start; }
+      .form-row { grid-template-columns: 1fr; }
+      th:nth-child(3), td:nth-child(3) { display: none; }
+    }
+
+    /* FOOTER */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--warm-light);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Kaza<span>bella</span></div>
+  <div class="header-meta">Inventaire Linge — Conciergerie</div>
+</header>
+
+<main>
+
+  <!-- ALERT BANNER -->
+  <div class="alert-banner hidden" id="alertBanner">
+    <span>⚠</span>
+    <span id="alertText"></span>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat-card total">
+      <div class="stat-label">Articles totaux</div>
+      <div class="stat-value" id="statTotal">0</div>
+      <div class="stat-sub">références</div>
+    </div>
+    <div class="stat-card ok">
+      <div class="stat-label">Stock OK</div>
+      <div class="stat-value" id="statOk">0</div>
+      <div class="stat-sub">au-dessus du seuil</div>
+    </div>
+    <div class="stat-card low">
+      <div class="stat-label">Stock Bas</div>
+      <div class="stat-value" id="statLow">0</div>
+      <div class="stat-sub">à réapprovisionner</div>
+    </div>
+    <div class="stat-card critical">
+      <div class="stat-label">Critique</div>
+      <div class="stat-value" id="statCritical">0</div>
+      <div class="stat-sub">urgences</div>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="toolbar-title">Inventaire du linge</div>
+    <div class="filter-group">
+      <button class="filter-btn active" data-filter="all">Tout</button>
+      <button class="filter-btn" data-filter="ok">OK</button>
+      <button class="filter-btn" data-filter="low">Bas</button>
+      <button class="filter-btn" data-filter="critical">Critique</button>
+    </div>
+    <button class="btn-add" onclick="openModal()">+ Ajouter</button>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input class="search-input" type="text" id="searchInput" placeholder="Rechercher un article, logement, catégorie…" oninput="renderTable()" />
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortBy('name')" id="th-name">Article</th>
+          <th onclick="sortBy('logement')" id="th-logement">Logement</th>
+          <th onclick="sortBy('categorie')" id="th-categorie">Catégorie</th>
+          <th onclick="sortBy('quantite')" id="th-quantite" style="text-align:center">Qté</th>
+          <th onclick="sortBy('seuil')" id="th-seuil" style="text-align:center">Seuil</th>
+          <th>Stock</th>
+          <th style="text-align:right">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+</main>
+
+<footer>Kazabella Conciergerie &mdash; Gestion Linge &mdash; <span id="yearFooter"></span></footer>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Nouvel article</div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nom de l'article *</label>
+        <input class="form-input" id="fName" type="text" placeholder="ex: Drap housse" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Catégorie *</label>
+        <select class="form-select" id="fCategorie">
+          <option value="">— Choisir —</option>
+          <option value="Draps">Draps</option>
+          <option value="Serviettes">Serviettes</option>
+          <option value="Taies">Taies d'oreiller</option>
+          <option value="Couettes">Couettes & Oreillers</option>
+          <option value="Peignoirs">Peignoirs</option>
+          <option value="Tapis de bain">Tapis de bain</option>
+          <option value="Torchons">Torchons</option>
+          <option value="Autre">Autre</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Logement *</label>
+      <input class="form-input" id="fLogement" type="text" placeholder="ex: Appartement Bellecour, Villa Rosa…" list="logementsList" />
+      <datalist id="logementsList"></datalist>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Quantité en stock *</label>
+        <input class="form-input" id="fQuantite" type="number" min="0" placeholder="0" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Seuil d'alerte *</label>
+        <input class="form-input" id="fSeuil" type="number" min="0" placeholder="0" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <input class="form-input" id="fNotes" type="text" placeholder="ex: 160x200, coton égyptien…" />
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Annuler</button>
+      <button class="btn-save" onclick="saveItem()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ─── DATA ─────────────────────────────────────────────────────────────────
+  const STORAGE_KEY = 'kazabella_inventaire_v1';
+
+  const DEFAULT_DATA = [
+    { id: 1, name: 'Drap housse 160×200', categorie: 'Draps', logement: 'Appartement Bellecour', quantite: 12, seuil: 6, notes: 'Coton percale' },
+    { id: 2, name: 'Drap plat blanc', categorie: 'Draps', logement: 'Appartement Bellecour', quantite: 8, seuil: 6, notes: '' },
+    { id: 3, name: 'Serviette de bain', categorie: 'Serviettes', logement: 'Appartement Bellecour', quantite: 10, seuil: 8, notes: '70×140 cm' },
+    { id: 4, name: 'Serviette de bain', categorie: 'Serviettes', logement: 'Villa Rosa', quantite: 4, seuil: 8, notes: '70×140 cm' },
+    { id: 5, name: 'Taie d\'oreiller 65×65', categorie: 'Taies', logement: 'Villa Rosa', quantite: 14, seuil: 8, notes: '' },
+    { id: 6, name: 'Peignoir taille M', categorie: 'Peignoirs', logement: 'Suite Prestige', quantite: 2, seuil: 4, notes: 'Brodé Kazabella' },
+    { id: 7, name: 'Tapis de bain 50×80', categorie: 'Tapis de bain', logement: 'Suite Prestige', quantite: 0, seuil: 4, notes: '' },
+    { id: 8, name: 'Couette 240×220', categorie: 'Couettes', logement: 'Appartement Bellecour', quantite: 5, seuil: 3, notes: '300g/m²' },
+    { id: 9, name: 'Torchon lin', categorie: 'Torchons', logement: 'Villa Rosa', quantite: 18, seuil: 10, notes: '' },
+  ];
+
+  let items = [];
+  let editingId = null;
+  let sortKey = 'name';
+  let sortDir = 1;
+  let filterStatus = 'all';
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      items = raw ? JSON.parse(raw) : [...DEFAULT_DATA];
+    } catch(e) { items = [...DEFAULT_DATA]; }
+  }
+
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  }
+
+  // ─── STATUS ────────────────────────────────────────────────────────────────
+  function getStatus(item) {
+    if (item.quantite === 0 || item.quantite < item.seuil * 0.4) return 'critical';
+    if (item.quantite < item.seuil) return 'low';
+    return 'ok';
+  }
+
+  function statusLabel(s) {
+    if (s === 'critical') return '<span class="badge badge-critical">Critique</span>';
+    if (s === 'low') return '<span class="badge badge-low">Stock bas</span>';
+    return '<span class="badge badge-ok">OK</span>';
+  }
+
+  // ─── RENDER ────────────────────────────────────────────────────────────────
+  function renderStats() {
+    const total = items.length;
+    const ok = items.filter(i => getStatus(i) === 'ok').length;
+    const low = items.filter(i => getStatus(i) === 'low').length;
+    const critical = items.filter(i => getStatus(i) === 'critical').length;
+
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statOk').textContent = ok;
+    document.getElementById('statLow').textContent = low;
+    document.getElementById('statCritical').textContent = critical;
+
+    const banner = document.getElementById('alertBanner');
+    if (critical > 0 || low > 0) {
+      const msgs = [];
+      if (critical > 0) msgs.push(`${critical} article(s) en stock critique`);
+      if (low > 0) msgs.push(`${low} article(s) à réapprovisionner`);
+      document.getElementById('alertText').textContent = msgs.join(' — ');
+      banner.classList.remove('hidden');
+    } else {
+      banner.classList.add('hidden');
+    }
+  }
+
+  function getFiltered() {
+    const q = document.getElementById('searchInput').value.toLowerCase().trim();
+    return items
+      .filter(i => {
+        if (filterStatus !== 'all' && getStatus(i) !== filterStatus) return false;
+        if (!q) return true;
+        return i.name.toLowerCase().includes(q)
+          || i.logement.toLowerCase().includes(q)
+          || i.categorie.toLowerCase().includes(q)
+          || (i.notes || '').toLowerCase().includes(q);
+      })
+      .sort((a, b) => {
+        const va = ('' + a[sortKey]).toLowerCase();
+        const vb = ('' + b[sortKey]).toLowerCase();
+        if (!isNaN(a[sortKey])) return (a[sortKey] - b[sortKey]) * sortDir;
+        return va.localeCompare(vb) * sortDir;
+      });
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('tableBody');
+    const filtered = getFiltered();
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7">
+        <div class="empty-state">
+          <div>✦</div>
+          <p>Aucun article trouvé</p>
+        </div>
+      </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = filtered.map((item, idx) => {
+      const status = getStatus(item);
+      const pct = Math.min(100, item.seuil > 0 ? (item.quantite / item.seuil) * 100 : 100);
+      const color = status === 'critical' ? 'var(--accent)' : status === 'low' ? 'var(--yellow)' : 'var(--green)';
+      return `<tr style="animation-delay:${idx * 30}ms">
+        <td>
+          <div class="td-name">${item.name}</div>
+          ${item.notes ? `<div style="font-size:0.58rem;color:var(--warm-light);margin-top:2px">${item.notes}</div>` : ''}
+        </td>
+        <td class="td-logement">${item.logement}</td>
+        <td><span class="badge badge-cat">${item.categorie}</span></td>
+        <td class="td-qty">${item.quantite}</td>
+        <td style="text-align:center;color:var(--warm-light);font-size:0.7rem">${item.seuil}</td>
+        <td>
+          ${statusLabel(status)}
+          <div class="progress-bar" style="margin-top:5px">
+            <div class="progress-fill" style="width:${pct}%;background:${color}"></div>
+          </div>
+        </td>
+        <td>
+          <div class="action-btns">
+            <button class="btn-icon" onclick="editItem(${item.id})" title="Modifier">✎</button>
+            <button class="btn-icon del" onclick="deleteItem(${item.id})" title="Supprimer">✕</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function render() {
+    renderStats();
+    renderTable();
+    updateLogementsList();
+  }
+
+  // ─── SORT ─────────────────────────────────────────────────────────────────
+  function sortBy(key) {
+    if (sortKey === key) sortDir *= -1;
+    else { sortKey = key; sortDir = 1; }
+    document.querySelectorAll('th').forEach(t => t.classList.remove('sorted'));
+    const th = document.getElementById('th-' + key);
+    if (th) th.classList.add('sorted');
+    renderTable();
+  }
+
+  // ─── FILTER ───────────────────────────────────────────────────────────────
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      filterStatus = btn.dataset.filter;
+      renderTable();
+    });
+  });
+
+  // ─── MODAL ────────────────────────────────────────────────────────────────
+  function openModal(id = null) {
+    editingId = id;
+    const overlay = document.getElementById('modalOverlay');
+    document.getElementById('modalTitle').textContent = id ? 'Modifier l\'article' : 'Nouvel article';
+
+    if (id) {
+      const item = items.find(i => i.id === id);
+      document.getElementById('fName').value = item.name;
+      document.getElementById('fCategorie').value = item.categorie;
+      document.getElementById('fLogement').value = item.logement;
+      document.getElementById('fQuantite').value = item.quantite;
+      document.getElementById('fSeuil').value = item.seuil;
+      document.getElementById('fNotes').value = item.notes || '';
+    } else {
+      document.getElementById('fName').value = '';
+      document.getElementById('fCategorie').value = '';
+      document.getElementById('fLogement').value = '';
+      document.getElementById('fQuantite').value = '';
+      document.getElementById('fSeuil').value = '';
+      document.getElementById('fNotes').value = '';
+    }
+    overlay.classList.add('open');
+    setTimeout(() => document.getElementById('fName').focus(), 200);
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('open');
+    editingId = null;
+  }
+
+  function saveItem() {
+    const name = document.getElementById('fName').value.trim();
+    const categorie = document.getElementById('fCategorie').value;
+    const logement = document.getElementById('fLogement').value.trim();
+    const quantite = parseInt(document.getElementById('fQuantite').value);
+    const seuil = parseInt(document.getElementById('fSeuil').value);
+    const notes = document.getElementById('fNotes').value.trim();
+
+    if (!name || !categorie || !logement || isNaN(quantite) || isNaN(seuil)) {
+      alert('Veuillez remplir tous les champs obligatoires (*)');
+      return;
+    }
+
+    if (editingId) {
+      const idx = items.findIndex(i => i.id === editingId);
+      items[idx] = { ...items[idx], name, categorie, logement, quantite, seuil, notes };
+    } else {
+      const maxId = items.reduce((m, i) => Math.max(m, i.id), 0);
+      items.push({ id: maxId + 1, name, categorie, logement, quantite, seuil, notes });
+    }
+
+    save();
+    closeModal();
+    render();
+  }
+
+  function editItem(id) { openModal(id); }
+
+  function deleteItem(id) {
+    const item = items.find(i => i.id === id);
+    if (!confirm(`Supprimer "${item.name}" (${item.logement}) ?`)) return;
+    items = items.filter(i => i.id !== id);
+    save();
+    render();
+  }
+
+  // ─── DATALIST ─────────────────────────────────────────────────────────────
+  function updateLogementsList() {
+    const logements = [...new Set(items.map(i => i.logement))];
+    const dl = document.getElementById('logementsList');
+    dl.innerHTML = logements.map(l => `<option value="${l}">`).join('');
+  }
+
+  // ─── CLOSE ON OVERLAY CLICK ───────────────────────────────────────────────
+  document.getElementById('modalOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // ─── KEYBOARD ─────────────────────────────────────────────────────────────
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal();
+  });
+
+  // ─── INIT ─────────────────────────────────────────────────────────────────
+  document.getElementById('yearFooter').textContent = new Date().getFullYear();
+  load();
+  render();
+</script>
+</body>
+</html>
